@@ -677,10 +677,10 @@ button.primary {
 
   function pickDefaultValue(game) {
     const player = currentPlayer(game);
-    const hasEntered = player.coins.some((c) => c.pathIndex >= 0 || c.finished);
-    if (!hasEntered && game.dicePool.indexOf(1) !== -1) return 1;
-    if (hasEntered && game.dicePool.indexOf(1) !== -1) return 1;
-    if (hasEntered && game.rules.enterOn15 && game.dicePool.indexOf(5) !== -1) return 5;
+    const pending = player.coins.filter((c) => c.pathIndex < 0 && !c.finished).length;
+    const hasEntered = player.opened || player.coins.some((c) => c.pathIndex >= 0 || c.finished);
+    if (pending > 0 && game.dicePool.indexOf(1) !== -1) return 1;
+    if (pending > 0 && hasEntered && game.rules.enterOn15 && game.dicePool.indexOf(5) !== -1) return 5;
     if (game.dicePool.length === 1) return game.dicePool[0];
     const saved = game.activeValue;
     for (const v of game.dicePool) {

@@ -219,7 +219,15 @@ html, body {
 }
 .bench-coin { width: 22px !important; height: 22px !important; }
 
-#pool { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; }
+#pool { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.streak-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.streak-row.active { background: rgba(224,177,74,.08); border-radius: 8px; padding: 4px; }
+.streak-lab { display: inline-flex; align-items: center; gap: 6px; min-width: 72px; font-size: 0.85rem; }
 #pool button {
   min-width: 40px;
   min-height: 40px;
@@ -450,6 +458,7 @@ button.primary {
       cutThisStreak: false,
       gateOpenedThisStreak: false,
       displayStreak: [],
+      lastStreaks: {},
       freshStreak: true,
       winner: null,
       log: [],
@@ -627,6 +636,8 @@ button.primary {
   }
 
   function endMovePhase(game) {
+    const who = currentPlayer(game);
+    game.lastStreaks[who.color] = (game.displayStreak || []).slice();
     const extraCut = game.cutThisStreak && game.rules.cutGivesExtra;
     if (extraCut) {
       game.log.push("Cut — extra rolls");
@@ -987,27 +998,46 @@ button.primary {
 
     const poolEl = document.getElementById("pool");
     poolEl.innerHTML = "";
-    const streak = game.displayStreak && game.displayStreak.length
-      ? game.displayStreak
-      : game.dicePool.map((v) => ({ value: v, kept: true }));
-    streak.forEach((item) => {
-      const v = item.value;
-      const kept = item.kept !== false;
-      const inPool = game.dicePool.indexOf(v) !== -1 && kept;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = v;
-      b.style.background = game.activeValue === v && inPool ? "#e0b14a" : "#3a2d20";
-      b.style.color = kept ? (game.activeValue === v ? "#1a1208" : "#f4e6c8") : "#8a7a62";
-      b.style.textDecoration = kept ? "none" : "line-through";
-      b.style.opacity = kept ? "1" : "0.55";
-      b.addEventListener("click", () => {
-        if (game.phase !== "move" || p.isAI || !kept) return;
-        T.setActiveValue(game, v);
-        selectedCoin = null;
-        render();
+    game.players.forEach((pl) => {
+      const isTurn = pl.color === p.color;
+      const streak = isTurn
+        ? game.displayStreak && game.displayStreak.length
+          ? game.displayStreak
+          : game.dicePool.map((v) => ({ value: v, kept: true }))
+        : game.lastStreaks[pl.color] || [];
+      const row = document.createElement("div");
+      row.className = "streak-row" + (isTurn ? " active" : "");
+      const lab = document.createElement("span");
+      lab.className = "streak-lab";
+      lab.innerHTML = '<span class="dot ' + pl.color + '"></span> ' + colorName(pl.color);
+      row.appendChild(lab);
+      if (!streak.length) {
+        const empty = document.createElement("small");
+        empty.textContent = isTurn ? "—" : "no roll yet";
+        empty.style.opacity = "0.5";
+        row.appendChild(empty);
+      }
+      streak.forEach((item) => {
+        const v = item.value;
+        const kept = item.kept !== false;
+        const inPool = isTurn && game.dicePool.indexOf(v) !== -1 && kept;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = v;
+        b.style.background = isTurn && game.activeValue === v && inPool ? "#e0b14a" : "#3a2d20";
+        b.style.color = kept ? (isTurn && game.activeValue === v ? "#1a1208" : "#f4e6c8") : "#8a7a62";
+        b.style.textDecoration = kept ? "none" : "line-through";
+        b.style.opacity = isTurn ? (kept ? "1" : "0.55") : "0.45";
+        b.disabled = !isTurn;
+        b.addEventListener("click", () => {
+          if (!isTurn || game.phase !== "move" || p.isAI || !kept) return;
+          T.setActiveValue(game, v);
+          selectedCoin = null;
+          render();
+        });
+        row.appendChild(b);
       });
-      poolEl.appendChild(b);
+      poolEl.appendChild(row);
     });
 
     const bench = document.getElementById("bench");

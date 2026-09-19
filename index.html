@@ -219,18 +219,35 @@ html, body {
 }
 .bench-coin { width: 22px !important; height: 22px !important; }
 
-#pool { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+#pool {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-height: 0;
+}
 .streak-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  align-content: flex-start;
+  gap: 4px;
+  border: 1px solid #4a3824;
+  border-radius: 8px;
+  padding: 6px;
+  min-height: 56px;
 }
-.streak-row.active { background: rgba(224,177,74,.08); border-radius: 8px; padding: 4px; }
-.streak-lab { display: inline-flex; align-items: center; gap: 6px; min-width: 72px; font-size: 0.85rem; }
+.streak-row.active { background: rgba(224,177,74,.12); border-color: #e0b14a; }
+.streak-lab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 #pool button {
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 34px;
+  min-height: 34px;
   font: inherit;
   font-weight: 800;
   border: 0;
@@ -998,6 +1015,8 @@ button.primary {
 
     const poolEl = document.getElementById("pool");
     poolEl.innerHTML = "";
+    poolEl.className = "seats-" + game.players.length;
+    if (!game.lastStreaks) game.lastStreaks = {};
     game.players.forEach((pl) => {
       const isTurn = pl.color === p.color;
       const streak = isTurn

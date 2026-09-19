@@ -649,6 +649,8 @@ button.primary {
     game.cutThisStreak = false;
     game.gateOpenedThisStreak = false;
     game.freshStreak = true;
+    game.displayStreak = [];
+    game.lastRoll = null;
     game.phase = "roll";
   }
 
@@ -1020,9 +1022,11 @@ button.primary {
     game.players.forEach((pl) => {
       const isTurn = pl.color === p.color;
       const streak = isTurn
-        ? game.displayStreak && game.displayStreak.length
-          ? game.displayStreak
-          : game.dicePool.map((v) => ({ value: v, kept: true }))
+        ? game.freshStreak
+          ? []
+          : (game.displayStreak && game.displayStreak.length
+              ? game.displayStreak
+              : game.dicePool.map((v) => ({ value: v, kept: true })))
         : game.lastStreaks[pl.color] || [];
       const row = document.createElement("div");
       row.className = "streak-row" + (isTurn ? " active" : "");

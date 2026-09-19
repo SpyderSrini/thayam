@@ -656,7 +656,9 @@ button.primary {
 
   function endMovePhase(game) {
     const who = currentPlayer(game);
-    game.lastStreaks[who.color] = (game.displayStreak || []).slice();
+    game.lastStreaks[who.color] = (game.displayStreak || [])
+      .filter((x) => !x.color || x.color === who.color)
+      .map((x) => ({ value: x.value, kept: x.kept, color: who.color }));
     const extraCut = game.cutThisStreak && game.rules.cutGivesExtra;
     if (extraCut) {
       game.log.push("Cut — extra rolls");
@@ -683,7 +685,11 @@ button.primary {
       game.displayStreak = [];
       game.freshStreak = false;
     }
-    game.displayStreak.push({ value: roll.value, kept: counting });
+    game.displayStreak.push({
+      value: roll.value,
+      kept: counting,
+      color: player.color,
+    });
     if (counting) {
       game.dicePool.push(roll.value);
       game.log.push("Rolled " + roll.value + (roll.extra ? " (extra)" : ""));
@@ -1021,13 +1027,16 @@ button.primary {
     if (!game.lastStreaks) game.lastStreaks = {};
     game.players.forEach((pl) => {
       const isTurn = pl.color === p.color;
-      const streak = isTurn
-        ? game.freshStreak
+      let streak;
+      if (isTurn) {
+        streak = game.freshStreak
           ? []
-          : (game.displayStreak && game.displayStreak.length
-              ? game.displayStreak
-              : game.dicePool.map((v) => ({ value: v, kept: true })))
-        : game.lastStreaks[pl.color] || [];
+          : (game.displayStreak || []).filter((x) => !x.color || x.color === pl.color);
+      } else {
+        streak = (game.lastStreaks[pl.color] || []).filter(
+          (x) => !x.color || x.color === pl.color
+        );
+      }
       const row = document.createElement("div");
       row.className = "streak-row" + (isTurn ? " active" : "");
       const lab = document.createElement("span");

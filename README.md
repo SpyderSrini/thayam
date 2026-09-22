@@ -13,7 +13,7 @@ This is a web MVP. You vs AI (you are Red). Online multiplayer, Google sign-in, 
 4. If any coin is still in the tray, a **1** (or **5** after the first coin is in) must bring one in. Tap a tray coin, then your home X.
 5. Outer ring anti-clockwise → middle ring clockwise through the corner X → third ring clockwise → exact count into the centre.
 6. X squares are safe and may stack. Plain squares hold one coin. Landing on an enemy off an X sends them back to the tray.
-7. Win: all 6 coins on the centre.
+7. Win: all 6 coins on the centre. Two players only: if all 6 of yours have left the outer ring and the other player has never cut, you also win.
 
 **Rules** (top right) has house toggles and New game.
 

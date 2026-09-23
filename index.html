@@ -618,8 +618,29 @@ button.primary {
       endMovePhase(game);
     } else {
       game.phase = "move";
+      if (!game._autoEntering) flushAutoEnters(game);
     }
     return game;
+  }
+
+  function flushAutoEnters(game) {
+    if (game.phase !== "move" || game.winner) return;
+    game._autoEntering = true;
+    let guard = 0;
+    while (guard++ < 8 && game.phase === "move" && !game.winner) {
+      const player = currentPlayer(game);
+      const pending = player.coins.filter((c) => c.pathIndex < 0 && !c.finished);
+      if (!pending.length) break;
+      let v = null;
+      if (game.dicePool.indexOf(1) !== -1 && canEnterFromBase(game, player, 1)) v = 1;
+      else if (game.dicePool.indexOf(5) !== -1 && canEnterFromBase(game, player, 5)) v = 5;
+      if (!v) break;
+      game.activeValue = v;
+      const moves = legalMoves(game).filter((m) => m.enter);
+      if (!moves.length) break;
+      applyMove(game, moves[0]);
+    }
+    game._autoEntering = false;
   }
 
   function allCoinsInside(player) {
@@ -702,7 +723,8 @@ button.primary {
       game.canRollAgain = false;
       game.phase = "move";
       game.activeValue = pickDefaultValue(game);
-      if (!anyLegalForPool(game)) {
+      flushAutoEnters(game);
+      if (game.phase === "move" && !anyLegalForPool(game)) {
         game.log.push("No legal moves");
         endMovePhase(game);
       }

@@ -746,6 +746,38 @@ button.primary {
     }
   }
 
+  function valuePlayableAfterEnters(game, v) {
+    const snap = {
+      players: snapshotPlayers(game),
+      pool: game.dicePool.slice(),
+      phase: game.phase,
+      active: game.activeValue,
+      display: JSON.parse(JSON.stringify(game.displayStreak || [])),
+      turn: game.turn,
+      winner: game.winner,
+      canRollAgain: game.canRollAgain,
+      cutThisStreak: game.cutThisStreak,
+      gateOpenedThisStreak: game.gateOpenedThisStreak,
+      freshStreak: game.freshStreak,
+    };
+    game.phase = "move";
+    flushAutoEnters(game);
+    const ok =
+      game.dicePool.indexOf(v) === -1 || valueHasLegal(game, v);
+    game.players = snap.players;
+    game.dicePool = snap.pool;
+    game.phase = snap.phase;
+    game.activeValue = snap.active;
+    game.displayStreak = snap.display;
+    game.turn = snap.turn;
+    game.winner = snap.winner;
+    game.canRollAgain = snap.canRollAgain;
+    game.cutThisStreak = snap.cutThisStreak;
+    game.gateOpenedThisStreak = snap.gateOpenedThisStreak;
+    game.freshStreak = snap.freshStreak;
+    return ok;
+  }
+
   function valueHasLegal(game, v) {
     const savedPhase = game.phase;
     const saved = game.activeValue;
@@ -812,7 +844,7 @@ button.primary {
     if (counting) {
       game.dicePool.push(roll.value);
       game.log.push("Rolled " + roll.value + (roll.extra ? " (extra)" : ""));
-      if (!valueHasLegal(game, roll.value)) {
+      if (!valuePlayableAfterEnters(game, roll.value)) {
         killStreakAndPass(game, "Dead " + roll.value + " — whole streak cancelled");
         return game;
       }
@@ -1054,6 +1086,24 @@ button.primary {
     pumpAI();
   }
 
+  function autoPickIfObvious() {
+    if (!game || game.winner || game.phase !== "move") return;
+    const p = T.currentPlayer(game);
+    if (p.isAI) return;
+    const all = T.allLegalMoves(game);
+    if (!all.length) return;
+    const ids = [];
+    for (const m of all) if (ids.indexOf(m.coinId) === -1) ids.push(m.coinId);
+    if (all.length === 1) {
+      T.applyMove(game, all[0]);
+      selectedCoin = null;
+      return;
+    }
+    if (ids.length === 1) {
+      selectedCoin = { color: p.color, id: ids[0] };
+    }
+  }
+
   function pumpAI() {
     if (!game || game.winner) return;
     const p = T.currentPlayer(game);
@@ -1129,7 +1179,7 @@ button.primary {
           : "roll"
         : game.activeValue
         ? "use " + game.activeValue
-        : "tap a stored number";
+        : "tap a coin, then a square";
     statusEl.innerHTML =
       '<span class="turn-pill"><span class="dot ' +
       p.color +
@@ -1279,6 +1329,7 @@ button.primary {
     if (!m) return;
     T.applyMove(game, m);
     selectedCoin = null;
+    autoPickIfObvious();
     render();
     pumpAI();
   }
@@ -1306,6 +1357,7 @@ button.primary {
     paintDice(roll);
     T.applyRoll(game, roll);
     selectedCoin = null;
+    autoPickIfObvious();
     render();
     paintDice(game.lastRoll);
     pumpAI();

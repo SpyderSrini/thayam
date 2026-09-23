@@ -818,6 +818,14 @@ button.primary {
       }
     } else {
       game.log.push("Rolled " + roll.value + " (before first 1 — ignored)");
+      if (!roll.extra) {
+        game.canRollAgain = false;
+        endMovePhase(game);
+        return game;
+      }
+      game.canRollAgain = true;
+      game.phase = "roll";
+      return game;
     }
     if (game.phase === "over") return game;
     if (roll.extra) {

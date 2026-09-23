@@ -725,6 +725,75 @@ button.primary {
     return true;
   }
 
+  function snapshotPlayers(game) {
+    return JSON.parse(JSON.stringify(game.players));
+  }
+
+  function silentApply(game, move) {
+    const player = currentPlayer(game);
+    const coin = player.coins[move.coinId];
+    coin.pos = move.to.slice();
+    coin.pathIndex = move.pathIndex;
+    if (sameCell(coin.pos, FINISH)) coin.finished = true;
+    if (move.enter) player.opened = true;
+    if (move.cut) {
+      const victimP = game.players.find((p) => p.color === move.cut.color);
+      const victim = victimP.coins[move.cut.id];
+      victim.pos = null;
+      victim.pathIndex = -1;
+      victim.finished = false;
+      player.cuts += 1;
+    }
+  }
+
+  function valueHasLegal(game, v) {
+    const savedPhase = game.phase;
+    const saved = game.activeValue;
+    game.phase = "move";
+    game.activeValue = v;
+    const n = legalMoves(game).length;
+    game.phase = savedPhase;
+    game.activeValue = saved;
+    return n > 0;
+  }
+
+  function canSpendAll(game, pool) {
+    if (!pool.length) return true;
+    const seen = {};
+    for (let i = 0; i < pool.length; i++) {
+      const v = pool[i];
+      if (seen[v]) continue;
+      seen[v] = true;
+      const savedPhase = game.phase;
+      const savedVal = game.activeValue;
+      game.phase = "move";
+      game.activeValue = v;
+      const moves = legalMoves(game).slice();
+      game.phase = savedPhase;
+      game.activeValue = savedVal;
+      for (const mv of moves) {
+        const players = snapshotPlayers(game);
+        silentApply(game, mv);
+        const rest = pool.slice();
+        rest.splice(i, 1);
+        const ok = canSpendAll(game, rest);
+        game.players = players;
+        if (ok) return true;
+      }
+    }
+    return false;
+  }
+
+  function killStreakAndPass(game, why) {
+    for (const chip of game.displayStreak || []) {
+      if (chip.kept !== false) chip.spent = true;
+    }
+    game.log.push(why || "Streak cancelled — pass");
+    game.dicePool = [];
+    game.activeValue = null;
+    endMovePhase(game);
+  }
+
   function applyRoll(game, roll) {
     if (game.phase !== "roll" || !game.canRollAgain) return game;
     game.lastRoll = roll;
@@ -743,9 +812,14 @@ button.primary {
     if (counting) {
       game.dicePool.push(roll.value);
       game.log.push("Rolled " + roll.value + (roll.extra ? " (extra)" : ""));
+      if (!valueHasLegal(game, roll.value)) {
+        killStreakAndPass(game, "Dead " + roll.value + " — whole streak cancelled");
+        return game;
+      }
     } else {
       game.log.push("Rolled " + roll.value + " (before first 1 — ignored)");
     }
+    if (game.phase === "over") return game;
     if (roll.extra) {
       game.canRollAgain = true;
       game.phase = "roll";
@@ -805,24 +879,13 @@ button.primary {
 
   function discardUnusableAndContinue(game) {
     if (game.phase !== "move") return;
-    const saved = game.activeValue;
-    let allOk = true;
-    for (const v of game.dicePool) {
-      game.activeValue = v;
-      if (!legalMoves(game).length) {
-        allOk = false;
-        break;
-      }
+    if (!game.dicePool.length) {
+      endMovePhase(game);
+      return;
     }
-    game.activeValue = saved;
-    if (allOk) return;
-    for (const chip of game.displayStreak || []) {
-      if (chip.kept !== false) chip.spent = true;
+    if (!canSpendAll(game, game.dicePool.slice())) {
+      killStreakAndPass(game, "Cannot spend whole streak — pass");
     }
-    game.log.push("Dead number in streak — pass whole roll");
-    game.dicePool = [];
-    game.activeValue = null;
-    endMovePhase(game);
   }
 
   function passTurnIfNoMoves(game) {

@@ -4,7 +4,297 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>தாயம் · Thayam</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <style>
+:root {
+  --bg: #2a1c12;
+  --floor: #cbb48a;
+  --floor2: #d8c39a;
+  --ink: #2a1a0c;
+  --ink2: #f4e6c8;
+  --muted: #b9a88a;
+  --wood: #5c3a1e;
+  --wood2: #3d2412;
+  --red: #b33b2e;
+  --green: #2f7a4a;
+  --yellow: #c49212;
+  --blue: #2a5f96;
+  --safe: #6b3a12;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse at top, #4a321c 0%, var(--bg) 70%);
+  color: var(--ink2);
+  font-family: "Trebuchet MS", "Noto Sans Tamil", sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 6px 8px 8px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 2px 8px;
+}
+.brand {
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+.ghost-sm {
+  background: #3a2d20;
+  color: var(--ink2);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.board-wrap {
+  width: min(100%, calc(100dvh - 310px));
+  max-width: 100%;
+  margin: 0 auto 4px;
+  flex: 0 0 auto;
+  background:
+    linear-gradient(145deg, #7a4e28, #4a2c14 40%, #2e1a0c);
+  border: 6px solid #3a2412;
+  border-radius: 6px;
+  padding: 6px;
+  box-shadow:
+    0 0 0 2px #c9a56a inset,
+    0 14px 36px rgba(0,0,0,.45);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(7, 1fr);
+  gap: 2px;
+  aspect-ratio: 1;
+  background: #5a3c20;
+  padding: 2px;
+}
+
+.cell {
+  position: relative;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,255,255,.22), transparent 28%),
+    var(--floor);
+  border-radius: 1px;
+  min-height: 0;
+}
+.cell.dark { background:
+  radial-gradient(circle at 12% 18%, rgba(255,255,255,.16), transparent 28%),
+  var(--floor2);
+}
+.cell.safe {
+  background:
+    radial-gradient(circle at 50% 50%, #ead7a4, #d2b56e);
+}
+.cell.home-red { box-shadow: inset 0 0 0 3px var(--red); }
+.cell.home-green { box-shadow: inset 0 0 0 3px var(--green); }
+.cell.home-yellow { box-shadow: inset 0 0 0 3px var(--yellow); }
+.cell.home-blue { box-shadow: inset 0 0 0 3px var(--blue); }
+.cell.finish {
+  background: #1c120a;
+  box-shadow: inset 0 0 0 3px #e0b14a;
+}
+.cell.legal {
+  outline: 3px solid #fff8e8;
+  outline-offset: -3px;
+  cursor: pointer;
+}
+
+.xmark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1.4px), var(--safe) calc(50% - 1.4px), var(--safe) calc(50% + 1.4px), transparent calc(50% + 1.4px)),
+    linear-gradient(to top left, transparent calc(50% - 1.4px), var(--safe) calc(50% - 1.4px), var(--safe) calc(50% + 1.4px), transparent calc(50% + 1.4px));
+}
+.cell.finish .xmark {
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1.4px), #e0b14a calc(50% - 1.4px), #e0b14a calc(50% + 1.4px), transparent calc(50% + 1.4px)),
+    linear-gradient(to top left, transparent calc(50% - 1.4px), #e0b14a calc(50% - 1.4px), #e0b14a calc(50% + 1.4px), transparent calc(50% + 1.4px));
+}
+
+.coins {
+  position: absolute;
+  inset: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 1px;
+  z-index: 2;
+}
+.coin {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #1a1208;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.45);
+  flex: 0 0 14px;
+}
+.coin.red { background: var(--red); }
+.coin.green { background: var(--green); }
+.coin.yellow { background: var(--yellow); }
+.coin.blue { background: var(--blue); }
+.coin.selected { transform: scale(1.25); box-shadow: 0 0 0 2px #fff8e8; }
+.coin.finished-mark { opacity: 0.85; }
+
+.dock {
+  position: sticky;
+  bottom: 0;
+  left: 0; right: 0;
+  background: rgba(26, 16, 10, 0.98);
+  border-top: 1px solid #6b4a28;
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+  z-index: 30;
+  flex: 0 0 auto;
+}
+.dock-inner { max-width: 520px; margin: 0 auto; }
+#status { margin-bottom: 8px; }
+.turn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #3a2d20;
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.dot.red { background: var(--red); }
+.dot.green { background: var(--green); }
+.dot.yellow { background: var(--yellow); }
+.dot.blue { background: var(--blue); }
+
+.dice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.die {
+  width: 74px;
+  height: 22px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f7edd4, #d7b57a 55%, #c4a066);
+  color: #1a1208;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  box-shadow: inset 0 1px 0 #fff4d8, inset 0 -2px 0 #8a6a32, 2px 3px 0 #5a3c18;
+}
+.die.spin { animation: kattai 0.45s ease-out; }
+@keyframes kattai {
+  0% { transform: rotateX(0deg) rotateZ(-10deg); }
+  40% { transform: rotateX(200deg) rotateZ(14deg); }
+  100% { transform: rotateX(360deg) rotateZ(0deg); }
+}
+.roll-value { font-size: 1.35rem; font-weight: 800; color: #e0b14a; }
+#bench {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  margin: 6px 0;
+}
+.bench-coin { width: 22px !important; height: 22px !important; }
+
+#pool {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-height: 0;
+}
+.streak-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
+  gap: 4px;
+  border: 1px solid #4a3824;
+  border-radius: 8px;
+  padding: 6px;
+  min-height: 56px;
+}
+.streak-row.active { background: rgba(224,177,74,.12); border-color: #e0b14a; }
+.streak-lab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+#pool button {
+  min-width: 34px;
+  min-height: 34px;
+  font: inherit;
+  font-weight: 800;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #e0b14a;
+  color: #1a1208;
+  font-weight: 700;
+  width: 100%;
+  margin: 6px 0 0;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.sheet {
+  display: none;
+  background: #2a2118;
+  border: 1px solid #4a3824;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+}
+.sheet.open { display: block; }
+.sheet label, .sheet .chk { display: block; margin: 8px 0; font-size: 0.9rem; color: var(--muted); }
+.bases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.base { background: #1f1812; border-radius: 8px; padding: 8px; min-height: 48px; }
+.base .coins { position: static; }
+.win {
+  background: #3d5a2a;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.log { max-height: 80px; overflow: auto; font-size: 0.75rem; color: var(--muted); }
+.jsflag { padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; font-weight: 700; font-size: 0.85rem; background: #7a2e2e; }
+.jsflag.ok { display: none; }
+
+  </style>
 </head>
 <body>
   <div class="app">
@@ -45,17 +335,930 @@
       </div>
     </div>
   </div>
-  <script src="js/engine.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/ui.js"></script>
   <script>
-    (function () {
-      var f = document.getElementById("jsflag");
-      if (f) f.className = "jsflag ok";
-      var btn = document.getElementById("rulesBtn");
-      var sheet = document.getElementById("sheet");
-      if (btn && sheet) btn.onclick = function () { sheet.classList.toggle("open"); };
-    })();
+/* Thayam / Dayakattai rules engine */
+(function (global) {
+  const HOME = {
+    red: [6, 3],
+    green: [3, 0],
+    yellow: [0, 3],
+    blue: [3, 6],
+  };
+
+  const FINISH = [3, 3];
+
+  const SAFE = new Set([
+    "6,3", "3,0", "0,3", "3,6",
+    "1,1", "1,5", "5,1", "5,5",
+    "3,3",
+  ]);
+
+  const OUTER_LEN = 23; // squares after leaving home, before inner
+
+  // After leaving home, walk the rest of the outer ring, then inner ring, then finish.
+  const PATHS = {
+    // After home: outer ACW 23, middle CW 16 starting at corner X, third CW 8, centre.
+    red: [
+      [6, 4], [6, 5], [6, 6], [5, 6], [4, 6], [3, 6], [2, 6], [1, 6],
+      [0, 6], [0, 5], [0, 4], [0, 3], [0, 2], [0, 1], [0, 0],
+      [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
+      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
+      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
+      [4, 2], [3, 2], [2, 2], [2, 3], [2, 4], [3, 4], [4, 4], [4, 3],
+      [3, 3],
+    ],
+    green: [
+      [2, 0], [1, 0], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5],
+      [0, 6], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
+      [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0], [5, 0], [4, 0],
+      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
+      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
+      [4, 2], [3, 2], [2, 2], [2, 3], [2, 4], [3, 4], [4, 4], [4, 3],
+      [3, 3],
+    ],
+    yellow: [
+      [0, 2], [0, 1], [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0],
+      [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6],
+      [5, 6], [4, 6], [3, 6], [2, 6], [1, 6], [0, 6], [0, 5], [0, 4],
+      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
+      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
+      [2, 4], [2, 3], [2, 2], [3, 2], [4, 2], [4, 3], [4, 4], [3, 4],
+      [3, 3],
+    ],
+    blue: [
+      [4, 6], [5, 6], [6, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1],
+      [6, 0], [5, 0], [4, 0], [3, 0], [2, 0], [1, 0], [0, 0],
+      [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [1, 6], [2, 6],
+      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
+      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
+      [2, 4], [2, 3], [2, 2], [3, 2], [4, 2], [4, 3], [4, 4], [3, 4],
+      [3, 3],
+    ],
+  };
+
+  const COLORS = ["red", "green", "yellow", "blue"];
+
+  function key(r, c) {
+    return r + "," + c;
+  }
+
+  function isSafe(r, c) {
+    return SAFE.has(key(r, c));
+  }
+
+  function sameCell(a, b) {
+    return a && b && a[0] === b[0] && a[1] === b[1];
+  }
+
+  function rollLongDice() {
+    const faces = [0, 1, 2, 3];
+    const a = faces[Math.floor(Math.random() * 4)];
+    const b = faces[Math.floor(Math.random() * 4)];
+    let value;
+    if (a === 0 && b === 0) value = 12;
+    else if ((a === 0 && b === 1) || (a === 1 && b === 0)) value = 1;
+    else value = a + b;
+    const extra = value === 1 || value === 5 || value === 6 || value === 12;
+    return { a, b, value, extra };
+  }
+
+  function defaultRules() {
+    return {
+      enterOn15: true,
+      mustCutToEnterInner: true,
+      cutGivesExtra: true,
+      coins: 6,
+    };
+  }
+
+  function createCoin(color, id) {
+    return {
+      id,
+      color,
+      pos: null, // null = base (off board)
+      pathIndex: -1, // -1 base, 0 = on home, 1.. = PATHS[color][i-1]
+      finished: false,
+    };
+  }
+
+  function createGame(opts) {
+    const rules = Object.assign(defaultRules(), opts.rules || {});
+    const playerCount = opts.playerCount || 2;
+    const seats =
+      playerCount === 2
+        ? ["red", "yellow"]
+        : playerCount === 3
+        ? ["red", "green", "yellow"]
+        : ["red", "green", "yellow", "blue"];
+
+    const players = seats.map((color) => ({
+      color,
+      coins: Array.from({ length: rules.coins }, (_, i) => createCoin(color, i)),
+      cuts: 0,
+      opened: false,
+      isAI: !!(opts.ai && opts.ai[color]),
+    }));
+
+    return {
+      rules,
+      players,
+      turn: 0,
+      phase: "roll", // roll | move
+      lastRoll: null,
+      dicePool: [],
+      activeValue: null,
+      canRollAgain: true,
+      cutThisStreak: false,
+      gateOpenedThisStreak: false,
+      displayStreak: [],
+      lastStreaks: {},
+      freshStreak: true,
+      winner: null,
+      log: [],
+    };
+  }
+
+  function currentPlayer(game) {
+    return game.players[game.turn];
+  }
+
+  function cellOccupants(game, r, c) {
+    const out = [];
+    for (const p of game.players) {
+      for (const coin of p.coins) {
+        if (coin.pos && coin.pos[0] === r && coin.pos[1] === c) out.push(coin);
+      }
+    }
+    return out;
+  }
+
+  function destinationFor(player, coin, steps) {
+    if (coin.finished) return null;
+    if (coin.pathIndex === -1) {
+      if (steps !== 1 && !(player._rulesEnter5 && steps === 5)) return null;
+      return { pos: HOME[coin.color].slice(), pathIndex: 0, fromBase: true };
+    }
+    const path = PATHS[coin.color];
+    const next = coin.pathIndex + steps;
+    if (next > path.length) return null; // must be exact to finish (finish is last)
+    // pathIndex 0 is home; path[0] is first step after home, finish is path[path.length-1]
+    // Mapping: pathIndex 0 = home. After 1 step, pathIndex 1 = path[0].
+    // Finish when pathIndex === path.length (standing on last path cell which is centre)
+    if (coin.pathIndex === 0) {
+      if (steps > path.length) return null;
+      const idx = steps; // 1 -> path[0]
+      const cell = idx === 0 ? HOME[coin.color] : path[idx - 1];
+      return { pos: cell.slice(), pathIndex: idx, fromBase: false };
+    }
+    const newIndex = coin.pathIndex + steps;
+    if (newIndex > path.length) return null;
+    const cell = newIndex === 0 ? HOME[coin.color] : path[newIndex - 1];
+    return { pos: cell.slice(), pathIndex: newIndex, fromBase: false };
+  }
+
+  function canEnterFromBase(game, player, steps) {
+    const hasEntered = player.coins.some((c) => c.pathIndex >= 0 || c.finished);
+    if (!hasEntered) return steps === 1;
+    if (steps === 1) return true;
+    if (game.rules.enterOn15 && steps === 5) return true;
+    return false;
+  }
+
+  function isInnerOrFinish(pathIndex) {
+    return pathIndex > OUTER_LEN; // home=0, outer=1..23, inner starts 24
+  }
+
+  function legalMoves(game) {
+    if (game.phase !== "move" || game.winner) return [];
+    const steps = game.activeValue;
+    if (!steps) return [];
+    const player = currentPlayer(game);
+    const moves = [];
+    const pending = player.coins.filter((c) => c.pathIndex < 0 && !c.finished);
+    const mustEnter = pending.length > 0 && canEnterFromBase(game, player, steps);
+
+    for (const coin of player.coins) {
+      if (coin.finished) continue;
+
+      if (coin.pathIndex === -1) {
+        if (!canEnterFromBase(game, player, steps)) continue;
+        const home = HOME[coin.color];
+        const occ = cellOccupants(game, home[0], home[1]).filter((c) => c.color === coin.color);
+        // home is safe; own coins may stack on home
+        moves.push({
+          coinId: coin.id,
+          to: home.slice(),
+          pathIndex: 0,
+          cut: null,
+          enter: true,
+          value: steps,
+        });
+        continue;
+      }
+
+      if (mustEnter) continue;
+
+      const dest = destinationFor(player, coin, steps);
+      if (!dest) continue;
+
+      const newIndex = dest.pathIndex;
+      if (game.rules.mustCutToEnterInner && player.cuts === 0 && isInnerOrFinish(newIndex)) {
+        continue;
+      }
+
+      const occ = cellOccupants(game, dest.pos[0], dest.pos[1]).filter((c) => c !== coin);
+      const enemy = occ.find((c) => c.color !== coin.color);
+      const own = occ.find((c) => c.color === coin.color);
+
+      if (own && !isSafe(dest.pos[0], dest.pos[1]) && !sameCell(dest.pos, FINISH)) {
+        continue; // blocked by own coin on plain square
+      }
+
+      let cut = null;
+      if (enemy && !isSafe(dest.pos[0], dest.pos[1])) {
+        cut = { color: enemy.color, id: enemy.id };
+      } else if (enemy && isSafe(dest.pos[0], dest.pos[1]) && !sameCell(dest.pos, FINISH)) {
+        // safe: allowed to stack, no cut
+      } else if (enemy && sameCell(dest.pos, FINISH)) {
+        // finish stacks
+      }
+
+      moves.push({
+        coinId: coin.id,
+        to: dest.pos,
+        pathIndex: newIndex,
+        cut,
+        enter: false,
+        value: steps,
+      });
+    }
+
+    return moves;
+  }
+
+  function applyMove(game, move) {
+    const player = currentPlayer(game);
+    const coin = player.coins[move.coinId];
+    coin.pos = move.to.slice();
+    coin.pathIndex = move.pathIndex;
+    if (sameCell(coin.pos, FINISH)) {
+      coin.finished = true;
+    }
+    if (move.enter) player.opened = true;
+
+    if (move.cut) {
+      const victimP = game.players.find((p) => p.color === move.cut.color);
+      const victim = victimP.coins[move.cut.id];
+      victim.pos = null;
+      victim.pathIndex = -1;
+      victim.finished = false;
+      player.cuts += 1;
+    }
+
+    const finishedAll = player.coins.every((c) => c.finished);
+    if (finishedAll) {
+      game.winner = player.color;
+      game.winReason = "centre";
+      game.phase = "over";
+      game.log.push(player.color + " wins");
+      return game;
+    }
+
+    if (move.cut) game.cutThisStreak = true;
+
+    const used = move.value != null ? move.value : game.activeValue;
+    const chip = (game.displayStreak || []).find(
+      (x) => x.value === used && x.kept !== false && !x.spent && (!x.color || x.color === player.color)
+    );
+    if (chip) chip.spent = true;
+    const idx = game.dicePool.indexOf(used);
+    if (idx >= 0) game.dicePool.splice(idx, 1);
+    game.activeValue = game.dicePool.length === 1 ? game.dicePool[0] : null;
+
+    if (checkTwoPlayerInnerLock(game)) return game;
+
+    if (game.dicePool.length === 0) {
+      endMovePhase(game);
+    } else {
+      game.phase = "move";
+    }
+    return game;
+  }
+
+  function allCoinsInside(player) {
+    return player.coins.every((c) => c.finished || c.pathIndex > OUTER_LEN);
+  }
+
+  function checkTwoPlayerInnerLock(game) {
+    if (game.players.length !== 2 || !game.rules.mustCutToEnterInner) return false;
+    for (const p of game.players) {
+      const opp = game.players.find((x) => x !== p);
+      if (allCoinsInside(p) && opp && opp.cuts === 0) {
+        game.winner = p.color;
+        game.winReason = "inner-lock";
+        game.phase = "over";
+        game.log.push(p.color + " wins — all inside, opponent cannot enter");
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function startTurnRoll(game) {
+    game.dicePool = [];
+    game.activeValue = null;
+    game.canRollAgain = true;
+    game.cutThisStreak = false;
+    game.gateOpenedThisStreak = false;
+    game.freshStreak = true;
+    game.displayStreak = [];
+    game.lastRoll = null;
+    game.phase = "roll";
+  }
+
+  function endMovePhase(game) {
+    const who = currentPlayer(game);
+    game.lastStreaks[who.color] = (game.displayStreak || [])
+      .filter((x) => !x.color || x.color === who.color)
+      .map((x) => ({ value: x.value, kept: x.kept, color: who.color }));
+    const extraCut = game.cutThisStreak && game.rules.cutGivesExtra;
+    if (extraCut) {
+      game.log.push("Cut — extra rolls");
+      startTurnRoll(game);
+      return;
+    }
+    game.turn = (game.turn + 1) % game.players.length;
+    startTurnRoll(game);
+  }
+
+  function setActiveValue(game, value) {
+    if (game.dicePool.indexOf(value) === -1) return false;
+    game.activeValue = value;
+    return true;
+  }
+
+  function applyRoll(game, roll) {
+    if (game.phase !== "roll" || !game.canRollAgain) return game;
+    game.lastRoll = roll;
+    const player = currentPlayer(game);
+    const counting = player.opened || game.gateOpenedThisStreak || roll.value === 1;
+    if (!player.opened && roll.value === 1) game.gateOpenedThisStreak = true;
+    if (game.freshStreak) {
+      game.displayStreak = [];
+      game.freshStreak = false;
+    }
+    game.displayStreak.push({
+      value: roll.value,
+      kept: counting,
+      color: player.color,
+    });
+    if (counting) {
+      game.dicePool.push(roll.value);
+      game.log.push("Rolled " + roll.value + (roll.extra ? " (extra)" : ""));
+    } else {
+      game.log.push("Rolled " + roll.value + " (before first 1 — ignored)");
+    }
+    if (roll.extra) {
+      game.canRollAgain = true;
+      game.phase = "roll";
+    } else {
+      game.canRollAgain = false;
+      game.phase = "move";
+      game.activeValue = pickDefaultValue(game);
+      if (!anyLegalForPool(game)) {
+        game.log.push("No legal moves");
+        endMovePhase(game);
+      }
+    }
+    return game;
+  }
+
+  function pickDefaultValue(game) {
+    const player = currentPlayer(game);
+    const pending = player.coins.filter((c) => c.pathIndex < 0 && !c.finished).length;
+    const hasEntered = player.opened || player.coins.some((c) => c.pathIndex >= 0 || c.finished);
+    if (pending > 0 && game.dicePool.indexOf(1) !== -1) return 1;
+    if (pending > 0 && hasEntered && game.rules.enterOn15 && game.dicePool.indexOf(5) !== -1) return 5;
+    if (game.dicePool.length === 1) return game.dicePool[0];
+    const saved = game.activeValue;
+    for (const v of game.dicePool) {
+      game.activeValue = v;
+      if (legalMoves(game).length) {
+        game.activeValue = saved;
+        return v;
+      }
+    }
+    game.activeValue = saved;
+    return null;
+  }
+
+  function allLegalMoves(game) {
+    if (game.phase !== "move" || game.winner) return [];
+    if (game.activeValue) {
+      return legalMoves(game).map((m) =>
+        Object.assign({}, m, { value: m.value || game.activeValue })
+      );
+    }
+    const out = [];
+    const saved = game.activeValue;
+    for (const v of game.dicePool) {
+      game.activeValue = v;
+      for (const m of legalMoves(game)) out.push(Object.assign({}, m, { value: v }));
+    }
+    game.activeValue = saved;
+    return out;
+  }
+
+  function anyLegalForPool(game) {
+    const saved = game.activeValue;
+    for (const v of game.dicePool) {
+      game.activeValue = v;
+      if (legalMoves(game).length) {
+        game.activeValue = saved;
+        return true;
+      }
+    }
+    game.activeValue = saved;
+    return false;
+  }
+
+  function discardUnusableAndContinue(game) {
+    if (game.phase !== "move") return;
+    if (game.activeValue && legalMoves(game).length) return;
+    const usable = [];
+    const saved = game.activeValue;
+    for (const v of game.dicePool) {
+      game.activeValue = v;
+      if (legalMoves(game).length) usable.push(v);
+    }
+    game.activeValue = saved;
+    if (!usable.length) {
+      endMovePhase(game);
+      return;
+    }
+    game.dicePool = usable;
+    game.activeValue = usable.length === 1 ? usable[0] : null;
+  }
+
+  function passTurnIfNoMoves(game) {
+    discardUnusableAndContinue(game);
+  }
+
+  global.Thayam = {
+    HOME,
+    FINISH,
+    SAFE,
+    PATHS,
+    OUTER_LEN,
+    COLORS,
+    key,
+    isSafe,
+    rollLongDice,
+    defaultRules,
+    createGame,
+    currentPlayer,
+    cellOccupants,
+    legalMoves,
+    applyMove,
+    applyRoll,
+    passTurnIfNoMoves,
+    setActiveValue,
+    allLegalMoves,
+    pickDefaultValue,
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+(function (global) {
+  function threatOn(game, r, c, myColor) {
+    if (global.Thayam.isSafe(r, c)) return 0;
+    let t = 0;
+    for (const pl of game.players) {
+      if (pl.color === myColor) continue;
+      for (const coin of pl.coins) {
+        if (!coin.pos || coin.finished) continue;
+        const d =
+          Math.abs(coin.pos[0] - r) + Math.abs(coin.pos[1] - c);
+        if (d > 0 && d <= 6) t += 7 - d;
+      }
+    }
+    return t;
+  }
+
+  function pickMove(game, moves) {
+    if (!moves.length) return null;
+    const T = global.Thayam;
+    const finish = T.FINISH;
+    const player = T.currentPlayer(game);
+    const pending = player.coins.filter((c) => c.pathIndex < 0 && !c.finished).length;
+    const onTrack = player.coins.filter(
+      (c) => c.pathIndex >= 0 && !c.finished
+    ).length;
+
+    const scored = moves.map((m) => {
+      let s = 0;
+      const safe = T.isSafe(m.to[0], m.to[1]);
+      if (m.to[0] === finish[0] && m.to[1] === finish[1]) s += 80;
+      if (m.cut) s += 42;
+      if (m.enter) s += pending ? 55 : 12;
+      if (safe) s += 18;
+      else s -= 8 + threatOn(game, m.to[0], m.to[1], player.color);
+      if (onTrack >= 2 && m.pathIndex > 20) s += 4;
+      else if (onTrack === 1 && !m.enter) s += m.pathIndex * 0.15;
+      else s += Math.min(m.pathIndex, 12) * 0.35;
+      if (pending && (m.value === 1 || m.value === 5) && !m.enter) s -= 40;
+      const piece = player.coins[m.coinId];
+      if (piece && piece.pos && piece.pathIndex >= 0) {
+        const fromSafe = T.isSafe(piece.pos[0], piece.pos[1]);
+        const toFinish = m.to[0] === finish[0] && m.to[1] === finish[1];
+        if (fromSafe && !safe && !toFinish) s -= 30;
+        if (!fromSafe) s += 14;
+      }
+      s += Math.random() * 1.5;
+      return { m, s };
+    });
+    scored.sort((a, b) => b.s - a.s);
+    return scored[0].m;
+  }
+
+  function pickValueAndMove(game) {
+    const T = global.Thayam;
+    const all = T.allLegalMoves(game);
+    if (!all.length) return null;
+    return pickMove(game, all);
+  }
+
+  function maybeAct(game) {
+    const T = global.Thayam;
+    const p = T.currentPlayer(game);
+    if (!p.isAI || game.winner) return false;
+    if (game.phase === "roll") {
+      T.applyRoll(game, T.rollLongDice());
+      return true;
+    }
+    if (game.phase === "move") {
+      const move = pickValueAndMove(game);
+      if (!move) {
+        T.passTurnIfNoMoves(game);
+        return true;
+      }
+      if (move.value) T.setActiveValue(game, move.value);
+      T.applyMove(game, move);
+      return true;
+    }
+    return false;
+  }
+
+  global.ThayamAI = { pickMove, maybeAct };
+})(typeof window !== "undefined" ? window : globalThis);
+
+(function () {
+  const T = window.Thayam;
+  const AI = window.ThayamAI;
+  let game = null;
+  let selectedCoin = null;
+
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const diceA = document.getElementById("dieA");
+  const diceB = document.getElementById("dieB");
+  const rollVal = document.getElementById("rollVal");
+  const basesEl = document.getElementById("bases");
+  const logEl = document.getElementById("log");
+  const winEl = document.getElementById("win");
+
+  function colorName(c) {
+    return c[0].toUpperCase() + c.slice(1);
+  }
+
+  function newGame() {
+    const count = Number(document.getElementById("playerCount").value);
+    const vsAI = document.getElementById("vsAI").checked;
+    const ai = {};
+    if (vsAI) {
+      if (count === 2) ai.yellow = true;
+      if (count >= 3) ai.green = true;
+      if (count >= 3) ai.yellow = true;
+      if (count === 4) ai.blue = true;
+    }
+    game = T.createGame({
+      playerCount: count,
+      ai,
+      rules: {
+        enterOn15: true,
+        mustCutToEnterInner: true,
+        cutGivesExtra: true,
+      },
+    });
+    selectedCoin = null;
+    render();
+    pumpAI();
+  }
+
+  function pumpAI() {
+    if (!game || game.winner) return;
+    const p = T.currentPlayer(game);
+    if (!p.isAI) return;
+    setTimeout(() => {
+      AI.maybeAct(game);
+      render();
+      pumpAI();
+    }, 900);
+  }
+
+  function render() {
+    boardEl.innerHTML = "";
+    const moves = game.phase === "move" ? T.allLegalMoves(game) : [];
+    const shownMoves =
+      selectedCoin != null
+        ? moves.filter((m) => m.coinId === selectedCoin.id)
+        : [];
+    const legalCells = new Set(shownMoves.map((m) => T.key(m.to[0], m.to[1])));
+
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < 7; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if ((r + c) % 2) cell.classList.add("dark");
+        if (T.isSafe(r, c)) cell.classList.add("safe");
+        if (r === 6 && c === 3) cell.classList.add("home-red");
+        if (r === 3 && c === 0) cell.classList.add("home-green");
+        if (r === 0 && c === 3) cell.classList.add("home-yellow");
+        if (r === 3 && c === 6) cell.classList.add("home-blue");
+        if (r === 3 && c === 3) cell.classList.add("finish");
+        if (T.isSafe(r, c)) {
+          const x = document.createElement("div");
+          x.className = "xmark";
+          cell.appendChild(x);
+        }
+        if (legalCells.has(T.key(r, c)) && selectedCoin != null) cell.classList.add("legal");
+
+        const occ = T.cellOccupants(game, r, c);
+        if (occ.length) {
+          const wrap = document.createElement("div");
+          wrap.className = "coins";
+          for (const coin of occ) {
+            const d = document.createElement("div");
+            d.className = "coin " + coin.color + (coin.finished ? " finished-mark" : "");
+            if (
+              selectedCoin &&
+              selectedCoin.color === coin.color &&
+              selectedCoin.id === coin.id
+            ) {
+              d.classList.add("selected");
+            }
+            d.title = coin.color + " #" + (coin.id + 1);
+            d.addEventListener("click", (e) => {
+              e.stopPropagation();
+              onCoinClick(coin);
+            });
+            wrap.appendChild(d);
+          }
+          cell.appendChild(wrap);
+        }
+
+        cell.addEventListener("click", () => onCellClick(r, c, moves));
+        boardEl.appendChild(cell);
+      }
+    }
+
+    const p = T.currentPlayer(game);
+    const phaseHint =
+      game.phase === "roll"
+        ? game.dicePool.length
+          ? "bonus — roll again"
+          : "roll"
+        : game.activeValue
+        ? "use " + game.activeValue
+        : "tap a stored number";
+    statusEl.innerHTML =
+      '<span class="turn-pill"><span class="dot ' +
+      p.color +
+      '"></span>' +
+      colorName(p.color) +
+      (p.isAI ? " (AI)" : "") +
+      " · " +
+      phaseHint +
+      "</span>";
+
+    if (game.lastRoll) {
+      diceA.textContent = game.lastRoll.a;
+      diceB.textContent = game.lastRoll.b;
+      rollVal.textContent = game.lastRoll.value + (game.lastRoll.extra ? " +" : "");
+    } else {
+      diceA.textContent = "·";
+      diceB.textContent = "·";
+      rollVal.textContent = "—";
+    }
+
+    const poolEl = document.getElementById("pool");
+    poolEl.innerHTML = "";
+    poolEl.className = "seats-" + game.players.length;
+    if (!game.lastStreaks) game.lastStreaks = {};
+    game.players.forEach((pl) => {
+      const isTurn = pl.color === p.color;
+      let streak;
+      if (isTurn) {
+        streak = game.freshStreak
+          ? []
+          : (game.displayStreak || []).filter((x) => !x.color || x.color === pl.color);
+      } else {
+        streak = (game.lastStreaks[pl.color] || []).filter(
+          (x) => !x.color || x.color === pl.color
+        );
+      }
+      const row = document.createElement("div");
+      row.className = "streak-row" + (isTurn ? " active" : "");
+      const lab = document.createElement("span");
+      lab.className = "streak-lab";
+      lab.innerHTML = '<span class="dot ' + pl.color + '"></span> ' + colorName(pl.color);
+      row.appendChild(lab);
+      if (!streak.length) {
+        const empty = document.createElement("small");
+        empty.textContent = isTurn ? "—" : "no roll yet";
+        empty.style.opacity = "0.5";
+        row.appendChild(empty);
+      }
+      streak.forEach((item) => {
+        const v = item.value;
+        const kept = item.kept !== false;
+        const spent = !!item.spent;
+        const inPool = isTurn && !spent && game.dicePool.indexOf(v) !== -1 && kept;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = v;
+        b.style.background = isTurn && game.activeValue === v && inPool ? "#e0b14a" : "#3a2d20";
+        b.style.color = spent || !kept ? "#8a7a62" : isTurn && game.activeValue === v && inPool ? "#1a1208" : "#f4e6c8";
+        b.style.textDecoration = spent || !kept ? "line-through" : "none";
+        b.style.opacity = spent || !kept ? "0.5" : isTurn ? "1" : "0.45";
+        b.disabled = !isTurn || spent || !kept;
+        b.addEventListener("click", () => {
+          if (!isTurn || game.phase !== "move" || p.isAI || !kept || spent) return;
+          T.setActiveValue(game, v);
+          selectedCoin = null;
+          render();
+        });
+        row.appendChild(b);
+      });
+      poolEl.appendChild(row);
+    });
+
+    const bench = document.getElementById("bench");
+    if (bench) {
+      bench.innerHTML = "";
+      const me = T.currentPlayer(game);
+      me.coins
+        .filter((c) => c.pathIndex < 0)
+        .forEach((coin) => {
+          const d = document.createElement("div");
+          d.className = "coin " + coin.color + " bench-coin";
+          if (selectedCoin && selectedCoin.color === coin.color && selectedCoin.id === coin.id) {
+            d.classList.add("selected");
+          }
+          d.addEventListener("click", () => onCoinClick(coin));
+          bench.appendChild(d);
+        });
+      if (!me.coins.some((c) => c.pathIndex < 0)) {
+        bench.innerHTML = "<small>No coins in tray</small>";
+      }
+    }
+
+    if (basesEl) basesEl.innerHTML = "";
+    for (const pl of game.players) {
+      if (!basesEl) break;
+      const box = document.createElement("div");
+      box.className = "base";
+      const off = pl.coins.filter((c) => c.pathIndex < 0).length;
+      const fin = pl.coins.filter((c) => c.finished).length;
+      box.innerHTML =
+        '<div><span class="dot ' +
+        pl.color +
+        '"></span> ' +
+        colorName(pl.color) +
+        "</div>" +
+        "<small>Base " +
+        off +
+        " · Home/track " +
+        (pl.coins.length - off - fin) +
+        " · Centre " +
+        fin +
+        " · Cuts " +
+        pl.cuts +
+        "</small>";
+      const wrap = document.createElement("div");
+      wrap.className = "coins";
+      pl.coins
+        .filter((c) => c.pathIndex < 0)
+        .forEach((coin) => {
+          const d = document.createElement("div");
+          d.className = "coin " + coin.color;
+          if (selectedCoin && selectedCoin.color === coin.color && selectedCoin.id === coin.id) {
+            d.classList.add("selected");
+          }
+          d.addEventListener("click", () => onCoinClick(coin));
+          wrap.appendChild(d);
+        });
+      box.appendChild(wrap);
+      basesEl.appendChild(box);
+    }
+
+    winEl.style.display = game.winner ? "block" : "none";
+    winEl.textContent = game.winner
+      ? colorName(game.winner) +
+        (game.winReason === "inner-lock"
+          ? " wins — all 6 inside; opponent never cut."
+          : " wins!")
+      : "";
+    const rollBtn = document.getElementById("rollBtn");
+    if (rollBtn) {
+      rollBtn.style.display =
+        game.phase === "roll" && !p.isAI && !game.winner ? "" : "none";
+    }
+    logEl.textContent = (game.log || []).slice(-8).join("\n");
+  }
+
+  function onCoinClick(coin) {
+    if (game.winner || game.phase !== "move") return;
+    const p = T.currentPlayer(game);
+    if (p.isAI) return;
+    if (selectedCoin && coin.pos) {
+      const landing = T.allLegalMoves(game).find(
+        (m) =>
+          m.coinId === selectedCoin.id &&
+          m.to[0] === coin.pos[0] &&
+          m.to[1] === coin.pos[1]
+      );
+      if (landing) {
+        T.applyMove(game, landing);
+        selectedCoin = null;
+        render();
+        pumpAI();
+        return;
+      }
+    }
+    if (coin.color !== p.color) return;
+    selectedCoin = { color: coin.color, id: coin.id };
+    if (coin.pathIndex < 0) {
+      const hasEntered = p.coins.some((c) => c.pathIndex >= 0 || c.finished);
+      if (!hasEntered && game.dicePool.indexOf(1) !== -1) T.setActiveValue(game, 1);
+      else if (hasEntered && game.dicePool.indexOf(1) !== -1) T.setActiveValue(game, 1);
+      else if (hasEntered && game.rules.enterOn15 && game.dicePool.indexOf(5) !== -1)
+        T.setActiveValue(game, 5);
+    }
+    render();
+  }
+
+  function onCellClick(r, c, moves) {
+    if (!selectedCoin || game.phase !== "move") return;
+    const p = T.currentPlayer(game);
+    const m = moves.find(
+      (mv) => mv.coinId === selectedCoin.id && mv.to[0] === r && mv.to[1] === c
+    );
+    if (!m) return;
+    T.applyMove(game, m);
+    selectedCoin = null;
+    render();
+    pumpAI();
+  }
+
+  function paintDice(roll) {
+    const setFace = (el, n) => {
+      el.textContent = n;
+      el.classList.remove("spin");
+      void el.offsetWidth;
+      el.classList.add("spin");
+    };
+    if (!roll) {
+      diceA.textContent = "·";
+      diceB.textContent = "·";
+      return;
+    }
+    setFace(diceA, roll.a);
+    setFace(diceB, roll.b);
+  }
+
+  document.getElementById("rollBtn").addEventListener("click", () => {
+    if (!game || game.winner || game.phase !== "roll") return;
+    if (T.currentPlayer(game).isAI) return;
+    const roll = T.rollLongDice();
+    paintDice(roll);
+    T.applyRoll(game, roll);
+    selectedCoin = null;
+    render();
+    paintDice(game.lastRoll);
+    pumpAI();
+  });
+
+  document.getElementById("newBtn").addEventListener("click", newGame);
+  newGame();
+})();
+
+(function() {
+  var f = document.getElementById("jsflag");
+  if (f) f.className = "jsflag ok";
+  var btn = document.getElementById("rulesBtn");
+  var sheet = document.getElementById("sheet");
+  if (btn && sheet) btn.onclick = function() { sheet.classList.toggle("open"); };
+})();
   </script>
 </body>
 </html>

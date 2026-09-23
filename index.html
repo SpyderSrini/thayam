@@ -63,7 +63,7 @@ html, body {
 }
 
 .board-wrap {
-  width: min(100%, calc(100dvh - 310px));
+  width: min(100%, calc(100dvh - 270px));
   max-width: 100%;
   margin: 0 auto 4px;
   flex: 0 0 auto;
@@ -272,11 +272,17 @@ button.primary {
 
 .sheet {
   display: none;
+  position: fixed;
+  left: 50%;
+  top: 52px;
+  transform: translateX(-50%);
+  width: min(92vw, 420px);
+  z-index: 40;
   background: #2a2118;
   border: 1px solid #4a3824;
   border-radius: 10px;
   padding: 12px;
-  margin: 8px 0;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
 }
 .sheet.open { display: block; }
 .sheet label, .sheet .chk { display: block; margin: 8px 0; font-size: 0.9rem; color: var(--muted); }
@@ -313,8 +319,8 @@ button.primary {
         </select>
       </label>
       <label class="chk"><input type="checkbox" id="vsAI" checked /> Others are AI</label>
-      <div id="bases" class="bases"></div>
-      <pre id="log" class="log"></pre>
+      <div id="bases" class="bases" style="display:none"></div>
+      <pre id="log" class="log" style="display:none"></pre>
     </div>
     <div class="board-wrap"><div id="board" class="board"></div></div>
     <div class="dock">
@@ -340,41 +346,13 @@ button.primary {
 (function (global) {
   const HOME = {
     red: [6, 3],
-    green: [3, 0],
-    yellow: [0, 3],
-    blue: [3, 6],
-  };
-
-  const FINISH = [3, 3];
-
-  const SAFE = new Set([
-    "6,3", "3,0", "0,3", "3,6",
-    "1,1", "1,5", "5,1", "5,5",
-    "3,3",
-  ]);
-
-  const OUTER_LEN = 23; // squares after leaving home, before inner
-
-  // After leaving home, walk the rest of the outer ring, then inner ring, then finish.
-  const PATHS = {
-    // After home: outer ACW 23, middle CW 16 starting at corner X, third CW 8, centre.
-    red: [
-      [6, 4], [6, 5], [6, 6], [5, 6], [4, 6], [3, 6], [2, 6], [1, 6],
-      [0, 6], [0, 5], [0, 4], [0, 3], [0, 2], [0, 1], [0, 0],
-      [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
-      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
-      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
-      [4, 2], [3, 2], [2, 2], [2, 3], [2, 4], [3, 4], [4, 4], [4, 3],
-      [3, 3],
-    ],
     green: [
-      [2, 0], [1, 0], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5],
-      [0, 6], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
-      [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0], [5, 0], [4, 0],
-      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
-      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
-      [4, 2], [3, 2], [2, 2], [2, 3], [2, 4], [3, 4], [4, 4], [4, 3],
-      [3, 3],
+      [4, 0], [5, 0], [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5],
+      [6, 6], [5, 6], [4, 6], [3, 6], [2, 6], [1, 6], [0, 6], [0, 5],
+      [0, 4], [0, 3], [0, 2], [0, 1], [0, 0], [1, 0], [2, 0], [1, 1],
+      [1, 2], [1, 3], [1, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5],
+      [5, 4], [5, 3], [5, 2], [5, 1], [4, 1], [3, 1], [2, 1], [2, 2],
+      [2, 3], [2, 4], [3, 4], [4, 4], [4, 3], [4, 2], [3, 2], [3, 3],
     ],
     yellow: [
       [0, 2], [0, 1], [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0],
@@ -382,17 +360,16 @@ button.primary {
       [5, 6], [4, 6], [3, 6], [2, 6], [1, 6], [0, 6], [0, 5], [0, 4],
       [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
       [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
-      [2, 4], [2, 3], [2, 2], [3, 2], [4, 2], [4, 3], [4, 4], [3, 4],
+      [2, 4], [3, 4], [4, 4], [4, 3], [4, 2], [3, 2], [2, 2], [2, 3],
       [3, 3],
     ],
     blue: [
-      [4, 6], [5, 6], [6, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1],
-      [6, 0], [5, 0], [4, 0], [3, 0], [2, 0], [1, 0], [0, 0],
-      [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [1, 6], [2, 6],
-      [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 2],
-      [5, 1], [4, 1], [3, 1], [2, 1], [1, 1], [1, 2], [1, 3], [1, 4],
-      [2, 4], [2, 3], [2, 2], [3, 2], [4, 2], [4, 3], [4, 4], [3, 4],
-      [3, 3],
+      [2, 6], [1, 6], [0, 6], [0, 5], [0, 4], [0, 3], [0, 2], [0, 1],
+      [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1],
+      [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [5, 6], [4, 6], [5, 5],
+      [5, 4], [5, 3], [5, 2], [5, 1], [4, 1], [3, 1], [2, 1], [1, 1],
+      [1, 2], [1, 3], [1, 4], [1, 5], [2, 5], [3, 5], [4, 5], [4, 4],
+      [4, 3], [4, 2], [3, 2], [2, 2], [2, 3], [2, 4], [3, 4], [3, 3],
     ],
   };
 
@@ -854,11 +831,13 @@ button.primary {
       (c) => c.pathIndex >= 0 && !c.finished
     ).length;
 
+    const mustCut = player.cuts === 0 && moves.some((m) => m.cut);
     const scored = moves.map((m) => {
       let s = 0;
+      if (mustCut && !m.cut) s -= 200;
       const safe = T.isSafe(m.to[0], m.to[1]);
       if (m.to[0] === finish[0] && m.to[1] === finish[1]) s += 80;
-      if (m.cut) s += 42;
+      if (m.cut) s += 70;
       if (m.enter) s += pending ? 55 : 12;
       if (safe) s += 18;
       else s -= 8 + threatOn(game, m.to[0], m.to[1], player.color);
@@ -870,8 +849,8 @@ button.primary {
       if (piece && piece.pos && piece.pathIndex >= 0) {
         const fromSafe = T.isSafe(piece.pos[0], piece.pos[1]);
         const toFinish = m.to[0] === finish[0] && m.to[1] === finish[1];
-        if (fromSafe && !safe && !toFinish) s -= 30;
-        if (!fromSafe) s += 14;
+        if (fromSafe && !safe && !toFinish) s -= 55;
+        if (!fromSafe) s += 18;
       }
       s += Math.random() * 1.5;
       return { m, s };
@@ -950,6 +929,8 @@ button.primary {
       },
     });
     selectedCoin = null;
+    const sheet = document.getElementById("sheet");
+    if (sheet) sheet.classList.remove("open");
     render();
     pumpAI();
   }
@@ -1123,43 +1104,6 @@ button.primary {
     }
 
     if (basesEl) basesEl.innerHTML = "";
-    for (const pl of game.players) {
-      if (!basesEl) break;
-      const box = document.createElement("div");
-      box.className = "base";
-      const off = pl.coins.filter((c) => c.pathIndex < 0).length;
-      const fin = pl.coins.filter((c) => c.finished).length;
-      box.innerHTML =
-        '<div><span class="dot ' +
-        pl.color +
-        '"></span> ' +
-        colorName(pl.color) +
-        "</div>" +
-        "<small>Base " +
-        off +
-        " · Home/track " +
-        (pl.coins.length - off - fin) +
-        " · Centre " +
-        fin +
-        " · Cuts " +
-        pl.cuts +
-        "</small>";
-      const wrap = document.createElement("div");
-      wrap.className = "coins";
-      pl.coins
-        .filter((c) => c.pathIndex < 0)
-        .forEach((coin) => {
-          const d = document.createElement("div");
-          d.className = "coin " + coin.color;
-          if (selectedCoin && selectedCoin.color === coin.color && selectedCoin.id === coin.id) {
-            d.classList.add("selected");
-          }
-          d.addEventListener("click", () => onCoinClick(coin));
-          wrap.appendChild(d);
-        });
-      box.appendChild(wrap);
-      basesEl.appendChild(box);
-    }
 
     winEl.style.display = game.winner ? "block" : "none";
     winEl.textContent = game.winner

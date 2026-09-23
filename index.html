@@ -645,7 +645,10 @@ button.primary {
       endMovePhase(game);
     } else {
       game.phase = "move";
-      if (!game._autoEntering) flushAutoEnters(game);
+      if (!game._autoEntering) {
+        flushAutoEnters(game);
+        if (game.phase === "move") discardUnusableAndContinue(game);
+      }
     }
     return game;
   }
@@ -750,14 +753,7 @@ button.primary {
       game.canRollAgain = false;
       game.phase = "move";
       flushAutoEnters(game);
-      if (game.phase === "move") {
-        game.activeValue =
-          game.dicePool.length === 1 ? game.dicePool[0] : null;
-      }
-      if (game.phase === "move" && !anyLegalForPool(game)) {
-        game.log.push("No legal moves");
-        endMovePhase(game);
-      }
+      if (game.phase === "move") discardUnusableAndContinue(game);
     }
     return game;
   }
@@ -809,20 +805,24 @@ button.primary {
 
   function discardUnusableAndContinue(game) {
     if (game.phase !== "move") return;
-    if (game.activeValue && legalMoves(game).length) return;
-    const usable = [];
     const saved = game.activeValue;
+    let allOk = true;
     for (const v of game.dicePool) {
       game.activeValue = v;
-      if (legalMoves(game).length) usable.push(v);
+      if (!legalMoves(game).length) {
+        allOk = false;
+        break;
+      }
     }
     game.activeValue = saved;
-    if (!usable.length) {
-      endMovePhase(game);
-      return;
+    if (allOk) return;
+    for (const chip of game.displayStreak || []) {
+      if (chip.kept !== false) chip.spent = true;
     }
-    game.dicePool = usable;
-    game.activeValue = usable.length === 1 ? usable[0] : null;
+    game.log.push("Dead number in streak — pass whole roll");
+    game.dicePool = [];
+    game.activeValue = null;
+    endMovePhase(game);
   }
 
   function passTurnIfNoMoves(game) {

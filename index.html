@@ -749,8 +749,11 @@ button.primary {
     } else {
       game.canRollAgain = false;
       game.phase = "move";
-      game.activeValue = pickDefaultValue(game);
       flushAutoEnters(game);
+      if (game.phase === "move") {
+        game.activeValue =
+          game.dicePool.length === 1 ? game.dicePool[0] : null;
+      }
       if (game.phase === "move" && !anyLegalForPool(game)) {
         game.log.push("No legal moves");
         endMovePhase(game);
@@ -780,14 +783,10 @@ button.primary {
 
   function allLegalMoves(game) {
     if (game.phase !== "move" || game.winner) return [];
-    if (game.activeValue) {
-      return legalMoves(game).map((m) =>
-        Object.assign({}, m, { value: m.value || game.activeValue })
-      );
-    }
     const out = [];
     const saved = game.activeValue;
-    for (const v of game.dicePool) {
+    const values = game.dicePool.length ? game.dicePool.slice() : saved ? [saved] : [];
+    for (const v of values) {
       game.activeValue = v;
       for (const m of legalMoves(game)) out.push(Object.assign({}, m, { value: v }));
     }
@@ -1242,16 +1241,19 @@ button.primary {
   });
 
   document.getElementById("newBtn").addEventListener("click", newGame);
-  newGame();
+  try {
+    newGame();
+    var fl = document.getElementById("jsflag");
+    if (fl) fl.className = "jsflag ok";
+  } catch (err) {
+    var fl2 = document.getElementById("jsflag");
+    if (fl2) {
+      fl2.className = "jsflag";
+      fl2.textContent = String(err && err.message ? err.message : err);
+    }
+  }
 })();
 
-(function() {
-  var f = document.getElementById("jsflag");
-  if (f) f.className = "jsflag ok";
-  var btn = document.getElementById("rulesBtn");
-  var sheet = document.getElementById("sheet");
-  if (btn && sheet) btn.onclick = function() { sheet.classList.toggle("open"); };
-})();
   </script>
 </body>
 </html>

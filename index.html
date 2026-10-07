@@ -1587,6 +1587,15 @@ button.primary {
   }
 })();
 
+  
+(function() {
+  var f = document.getElementById("jsflag");
+  if (f) f.className = "jsflag ok";
+  var btn = document.getElementById("rulesBtn");
+  var sheet = document.getElementById("sheet");
+  if (btn && sheet) btn.onclick = function() { sheet.classList.toggle("open"); };
+})();
+
   </script>
 </body>
 </html>

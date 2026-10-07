@@ -1544,6 +1544,10 @@ button.primary {
         const link = location.origin + location.pathname + "?room=" + code;
         document.getElementById("roomMsg").textContent = "Share " + link;
       }).catch(function (e) { document.getElementById("roomMsg").textContent = String(e.message || e); });
+      setTimeout(function () {
+        const el = document.getElementById("roomMsg");
+        if (el && !el.textContent) el.textContent = "No reply from database. Upload the Singapore file.";
+      }, 6000);
     };
     document.getElementById("roomJoin").onclick = function () {
       const q = new URLSearchParams(location.search).get("room");

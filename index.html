@@ -957,7 +957,6 @@ button.primary {
     pickDefaultValue,
   };
 })(typeof window !== "undefined" ? window : globalThis);
-
 (function (global) {
   function threatOn(game, r, c, myColor) {
     if (global.Thayam.isSafe(r, c)) return 0;
@@ -1042,7 +1041,6 @@ button.primary {
 
   global.ThayamAI = { pickMove, maybeAct };
 })(typeof window !== "undefined" ? window : globalThis);
-
 /* Invite-link rooms. Needs Firebase Realtime Database config in localStorage. */
 (function (global) {
   const KEY = "thayam.fb";
@@ -1064,12 +1062,15 @@ button.primary {
     return id;
   }
 
+  const BUILTIN = {
+    apiKey: "AIzaSyAICP-y5BCtCLmuDR7Qmg9ZXL-E-ghULz0",
+    authDomain: "thayam-0287.firebaseapp.com",
+    databaseURL: "https://thayam-0287-default-rtdb.firebaseio.com",
+    projectId: "thayam-0287",
+  };
+
   function loadCfg() {
-    try {
-      return JSON.parse(localStorage.getItem(KEY) || "null");
-    } catch (e) {
-      return null;
-    }
+    return BUILTIN;
   }
 
   function saveCfg(obj) {
@@ -1182,7 +1183,6 @@ button.primary {
     },
   };
 })(window);
-
 (function () {
   const T = window.Thayam;
   const AI = window.ThayamAI;
@@ -1533,42 +1533,33 @@ button.primary {
     if (!sheet || document.getElementById("roomBox")) return;
     const box = document.createElement("div");
     box.id = "roomBox";
-    box.innerHTML = '<label>Firebase config (once)<textarea id="fbCfg" rows="4" style="width:100%" placeholder="paste { apiKey, databaseURL, projectId }"></textarea></label><button class="ghost-sm" type="button" id="fbSave">Save config</button> <button class="ghost-sm" type="button" id="roomCreate">Create room</button> <button class="ghost-sm" type="button" id="roomJoin">Join link</button><div id="roomMsg" style="margin-top:8px;font-size:0.85rem"></div>';
+    box.innerHTML = '<button class="ghost-sm" type="button" id="roomCreate">Create room</button> <button class="ghost-sm" type="button" id="roomJoin">Join this link</button><div id="roomMsg" style="margin-top:8px;font-size:0.85rem"></div>';
     sheet.appendChild(box);
-    const saved = ThayamOnline.loadCfg();
-    if (saved) document.getElementById("fbCfg").value = JSON.stringify(saved);
-    document.getElementById("fbSave").onclick = function () {
-      try {
-        ThayamOnline.saveCfg(JSON.parse(document.getElementById("fbCfg").value));
-        document.getElementById("roomMsg").textContent = ThayamOnline.ready() ? "Config saved" : "Config saved, but Firebase script missing";
-      } catch (e) {
-        document.getElementById("roomMsg").textContent = "Not valid JSON";
-      }
-    };
     document.getElementById("roomCreate").onclick = function () {
-      if (!ThayamOnline.ready()) { document.getElementById("roomMsg").textContent = "Save config first"; return; }
+      if (!ThayamOnline.ready()) { document.getElementById("roomMsg").textContent = "Online not ready"; return; }
       newGame();
       game.players.forEach(function (pl) { if (pl.color !== "red") pl.isAI = false; });
       ThayamOnline.createRoom(game, "red").then(function (code) {
         ThayamOnline.listen(code, applyRemote);
-        document.getElementById("roomMsg").textContent = "Share " + location.origin + location.pathname + "?room=" + code;
+        const link = location.origin + location.pathname + "?room=" + code;
+        document.getElementById("roomMsg").textContent = "Share " + link;
       }).catch(function (e) { document.getElementById("roomMsg").textContent = String(e.message || e); });
     };
     document.getElementById("roomJoin").onclick = function () {
       const q = new URLSearchParams(location.search).get("room");
       if (!q) { document.getElementById("roomMsg").textContent = "Open the invite link first"; return; }
-      if (!ThayamOnline.ready()) { document.getElementById("roomMsg").textContent = "Save config first"; return; }
       ThayamOnline.claim(q, "yellow", "Friend").then(function () {
         ThayamOnline.listen(q, applyRemote);
         document.getElementById("roomMsg").textContent = "Joined " + q + " as Yellow";
         sheet.classList.remove("open");
-      });
+      }).catch(function (e) { document.getElementById("roomMsg").textContent = String(e.message || e); });
     };
     const q = new URLSearchParams(location.search).get("room");
     if (q && ThayamOnline.ready()) {
       ThayamOnline.setColor("yellow");
       ThayamOnline.listen(q, applyRemote);
-      document.getElementById("roomMsg").textContent = "Room " + q + " — tap Join link to claim Yellow";
+      document.getElementById("roomMsg").textContent = "Room " + q + " — tap Join this link";
+      sheet.classList.add("open");
     }
   }
   wireRoom();
@@ -1587,7 +1578,7 @@ button.primary {
   }
 })();
 
-  
+
 (function() {
   var f = document.getElementById("jsflag");
   if (f) f.className = "jsflag ok";
